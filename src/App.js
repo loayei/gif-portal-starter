@@ -50,7 +50,15 @@ const App = () => {
     }
   };
 
-  const connectWallet = async () => {};
+  const connectWallet = async () => {
+    const { solana } = window;
+
+    if (solana) {
+      const response = await solana.connect();
+      console.loh('Wallet Connected', response);
+      setWalletAddress(response.publicKey.toString());
+  };
+};
 
   const sendGif = async () => {
     if (inputValue.length === 0) {
