@@ -149,9 +149,9 @@
 }
 
 .vote-up-button {
-  background: -webkit-linear-gradient(left, #fc7641, #f30404);
+  background: -webkit-linear-gradient(left, #60c657, #4e44ce);
 }
 
 .vote-down-button {
-  background: -webkit-linear-gradient(left, #f30404, #fc7641)
+  background: -webkit-linear-gradient(left, #4e44ce, #60c657)
 }
