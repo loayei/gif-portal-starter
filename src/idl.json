@@ -43,6 +43,75 @@
             "type": "string"
           }
         ]
+      },
+      {
+        "name": "updateItem",
+        "accounts": [
+          {
+            "name": "baseAccount",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "user",
+            "isMut": true,
+            "isSigner": true
+          }
+        ],
+        "args": [
+          {
+            "name": "index",
+            "type": "u64"
+          },
+          {
+            "name": "vote",
+            "type": {
+              "defined": "Vote"
+            }
+          }
+        ]
+      },
+      {
+        "name": "upVote",
+        "accounts": [
+          {
+            "name": "baseAccount",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "user",
+            "isMut": true,
+            "isSigner": true
+          }
+        ],
+        "args": [
+          {
+            "name": "index",
+            "type": "u64"
+          }
+        ]
+      },
+      {
+        "name": "downVote",
+        "accounts": [
+          {
+            "name": "baseAccount",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "user",
+            "isMut": true,
+            "isSigner": true
+          }
+        ],
+        "args": [
+          {
+            "name": "index",
+            "type": "u64"
+          }
+        ]
       }
     ],
     "accounts": [
@@ -80,12 +149,37 @@
             {
               "name": "userAddress",
               "type": "publicKey"
+            },
+            {
+              "name": "votes",
+              "type": "i64"
+            }
+          ]
+        }
+      },
+      {
+        "name": "Vote",
+        "type": {
+          "kind": "enum",
+          "variants": [
+            {
+              "name": "Down"
+            },
+            {
+              "name": "Up"
             }
           ]
         }
       }
     ],
+    "errors": [
+      {
+        "code": 300,
+        "name": "GifIndexOutOfBounds",
+        "msg": "No GIF at this index"
+      }
+    ],
     "metadata": {
-      "address": "Ejx3f6RR9moPBKn99W1sB2XafWJwGhyWi2KyqZNBaM9"
+      "address": "4H8RWS5zZsj34WitF4JEuVLUxmsQgYBA9XxWBQBT52Sz"
     }
   }

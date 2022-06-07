@@ -1,8 +1,7 @@
-import twitterLogo from "./assets/twitter-logo.svg";
 import "./App.css";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Connection, PublicKey, clusterApiUrl } from "@solana/web3.js";
-import { Program, Provider, web3 } from "@project-serum/anchor";
+import { Program, Provider, web3, BN } from "@project-serum/anchor";
 import idl from "./idl.json";
 import kp from "./.keypair.json";
 
@@ -19,10 +18,6 @@ const network = clusterApiUrl("devnet");
 const opts = {
   preflightCommitment: "processed",
 };
-
-// Constants
-const TWITTER_HANDLE = "_buildspace";
-const TWITTER_LINK = `https://twitter.com/${TWITTER_HANDLE}`;
 
 const App = () => {
   const [walletAddress, setWalletAddress] = useState(null);
@@ -53,36 +48,13 @@ const App = () => {
   const connectWallet = async () => {
     const { solana } = window;
 
-    if (solana) {
+    if (solana && solana.isPhantom) {
       const response = await solana.connect();
-      console.loh('Wallet Connected', response);
+      console.log("Wallet Connected", response.publicKey.toString());
       setWalletAddress(response.publicKey.toString());
-  };
-};
-
-  const sendGif = async () => {
-    if (inputValue.length === 0) {
-      alert("Please enter a valid gif link");
-      return;
-    }
-    setInputValue(""); // Clear input field
-    console.log("Gif link: ", inputValue);
-    try {
-      const provider = getProvider();
-      const program = new Program(idl, programID, provider);
-
-      await program.rpc.addGif(inputValue, {
-        accounts: {
-          baseAccount: baseAccount.publicKey,
-          user: provider.wallet.publicKey,
-        },
-      });
-      console.log("Gif added", inputValue);
-      await getGifList();
-    } catch (error) {
-      console.log("Gif was not send due to an error: ", error);
     }
   };
+
   const onInputChange = (event) => {
     const { value } = event.target;
     setInputValue(value);
@@ -115,7 +87,7 @@ const App = () => {
             className="cta-button submit-gif-button"
             onClick={createGifAccount}
           >
-            Create GIF Account
+            Create Account
           </button>
         </div>
       );
@@ -142,6 +114,27 @@ const App = () => {
             {gifList.map((item, index) => (
               <div className="gif-item" key={index}>
                 <img src={item.gifLink} alt="gif" />
+                <div className="vote">
+                  <span className="vote-counter">
+                    {item.votes.toString()} votes
+                  </span>
+                  <button
+                    className="vote-button vote-up-button"
+                    onClick={upVote}
+                    value={index}
+                  >
+                    {" "}
+                    Upvote{" "}
+                  </button>
+                  <button
+                    className="vote-button vote-down-button"
+                    onClick={downVote}
+                    value={index}
+                  >
+                    {" "}
+                    DownVote{" "}
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -157,30 +150,6 @@ const App = () => {
     window.addEventListener("load", onLoad);
     return () => window.removeEventListener("load", onLoad);
   }, []);
-
-  const getGifList = async () => {
-    try {
-      const provider = getProvider();
-      const program = new Program(idl, programID, provider);
-      const account = await program.account.baseAccount.fetch(
-        baseAccount.publicKey
-      );
-
-      console.log("account: ", account);
-      setGifList(account.gifList);
-    } catch (error) {
-      console.log("error", error);
-      setGifList(null);
-    }
-  };
-
-  useEffect(() => {
-    if (walletAddress) {
-      console.log("Getting gifs");
-      getGifList();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [walletAddress]);
 
   const createGifAccount = async () => {
     try {
@@ -205,25 +174,108 @@ const App = () => {
     }
   };
 
+  const getGifList = useCallback(async () => {
+    try {
+      const provider = getProvider();
+      const program = new Program(idl, programID, provider);
+      const account = await program.account.baseAccount.fetch(
+        baseAccount.publicKey
+      );
+
+      console.log("account: ", account);
+      setGifList(account.gifList);
+    } catch (error) {
+      console.log("error", error);
+      setGifList(null);
+    }
+  }, []);
+
+  const sendGif = async () => {
+    if (inputValue.length === 0) {
+      alert("Please enter a valid gif link");
+      return;
+    }
+    setInputValue(""); // Clear input field
+    console.log("Gif link: ", inputValue);
+    try {
+      const provider = getProvider();
+      const program = new Program(idl, programID, provider);
+
+      await program.rpc.addGif(inputValue, {
+        accounts: {
+          baseAccount: baseAccount.publicKey,
+          user: provider.wallet.publicKey,
+        },
+      });
+      console.log("Gif added", inputValue);
+      await getGifList();
+    } catch (error) {
+      console.log("Gif was not send due to an error: ", error);
+    }
+  };
+
+  const upVote = async (event) => {
+    try {
+      event.preventDefault();
+      const target = event.target;
+      const index = target.value;
+      const provider = getProvider();
+      const program = new Program(idl, programID, provider);
+
+      await program.rpc.upVote(new BN(index), {
+        accounts: {
+          baseAccount: baseAccount.publicKey,
+          user: provider.wallet.publicKey,
+        },
+      });
+      console.log("Upvote successful", index);
+
+      await getGifList();
+    } catch (error) {
+      console.log("vote unsuccessful");
+    }
+  };
+
+  const downVote = async (event) => {
+    try {
+      event.preventDefault();
+      const target = event.target;
+      const index = target.value;
+      const provider = getProvider();
+      const program = new Program(idl, programID, provider);
+
+      await program.rpc.downVote(new BN(index), {
+        accounts: {
+          baseAccount: baseAccount.publicKey,
+          user: provider.wallet.publicKey,
+        },
+      });
+      console.log("DownVote successful", index);
+
+      await getGifList();
+    } catch (error) {
+      console.log("vote unsuccessful");
+    }
+  };
+
+  useEffect(() => {
+    if (walletAddress) {
+      console.log("Getting gifs");
+      getGifList();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [walletAddress]);
+
   return (
     <div className="App">
       <div className="walletAddress ? 'authed-container' : 'container'}">
         <div className="header-container">
-          <p className="header">🖼 GIF Portal</p>
+          <p className="header">Voting Dapp</p>
           <p className="sub-text">
-            View your GIF collection in the metaverse ✨
+            A Dapp where you can upload pictures and vote on them.
           </p>
           {!walletAddress && renderNotConnected()}
           {walletAddress && renderConnected()}
-        </div>
-        <div className="footer-container">
-          <img alt="Twitter Logo" className="twitter-logo" src={twitterLogo} />
-          <a
-            className="footer-text"
-            href={TWITTER_LINK}
-            target="_blank"
-            rel="noreferrer"
-          >{`built on @${TWITTER_HANDLE}`}</a>
         </div>
       </div>
     </div>
